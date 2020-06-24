@@ -1,0 +1,11 @@
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - h5py
+  - tensorboard
+  - matplotlib
+  - scikit-learn
+  - requests
+  - tensorflow==1.15
+

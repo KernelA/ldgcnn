@@ -11,14 +11,18 @@ import tensorflow as tf
 import socket
 import importlib
 import os
+import shutil
 import sys
+
+import provider
+from vision_process import FileIO
+
+
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, 'models'))
 sys.path.append(os.path.join(BASE_DIR, 'utils'))
-sys.path.append(os.path.join(BASE_DIR, 'VisionProcess'))
-import provider
-from FileIO import FileIO
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
@@ -38,6 +42,7 @@ parser.add_argument('--model_classifier', default='ldgcnn_classifier', help='Mod
 parser.add_argument('--num_feature_classifier', type=int, default= 3072, help='Point Number [1024/1984] [default: 1024]')
 parser.add_argument('--max_epoch_classifier', type=int, default=100, help='Epoch to run [default: 250]')
 parser.add_argument('--optimizer_classifier', default='momentum', help='adam or momentum [default: adam]')
+
 
 FLAGS = parser.parse_args()
 
@@ -59,12 +64,17 @@ DECAY_STEP = FLAGS.decay_step
 DECAY_RATE = FLAGS.decay_rate
 
 MODEL = importlib.import_module(FLAGS.model) # import network module
-MODEL_FILE = os.path.join(BASE_DIR, 'models', FLAGS.model+'.py')
+MODEL_FILE = os.path.join(BASE_DIR, 'models', FLAGS.model +'.py')
 LOG_DIR = FLAGS.log_dir
-if not os.path.exists(LOG_DIR): os.mkdir(LOG_DIR)
-os.system('cp %s %s' % (MODEL_FILE, LOG_DIR)) # bkp of model def
-os.system('cp %s %s' % (MODEL_FILE_CLS, LOG_DIR)) # bkp of model_cls def
-os.system('cp train.py %s' % (LOG_DIR)) # bkp of train procedure
+if not os.path.exists(LOG_DIR):
+     os.mkdir(LOG_DIR)
+
+# shutil.copy2(MODEL_FILE, os.path.join(LOG_DIR, MODEL_FILE))
+# shutil.copy2(MODEL_FILE_CLS, os.path.join(LOG_DIR, MODEL_FILE_CLS))
+# shutil.copy2("train.py", os.path.join(LOG_DIR, "train.py"))
+# os.system('cp %s %s' % (MODEL_FILE, LOG_DIR)) # bkp of model def
+# os.system('cp %s %s' % (MODEL_FILE_CLS, LOG_DIR)) # bkp of model_cls def
+# os.system('cp train.py %s' % (LOG_DIR)) # bkp of train procedure
 LOG_FOUT = open(os.path.join(LOG_DIR,FLAGS.model + NAME_MODEL + '_log_train.txt'), 'w')
 LOG_FOUT.write(str(FLAGS)+'\n')
 
@@ -79,19 +89,19 @@ BN_DECAY_CLIP = 0.99
 HOSTNAME = socket.gethostname()
 
 # ModelNet40 official train/test split
-folder = 'data/modelnet40_ply_hdf5_2048'
+folder = os.path.join('data', 'modelnet40_ply_hdf5_2048')
 TRAIN_FILES = provider.getDataFiles( \
-    os.path.join(BASE_DIR, folder + '/train_files.txt'))
-TEST_FILES = provider.getDataFiles(\
-    os.path.join(BASE_DIR, folder + '/test_files.txt'))
+    os.path.join(BASE_DIR, folder, 'train_files.txt'))
+TEST_FILES = provider.getDataFiles(
+    os.path.join(BASE_DIR, folder, 'test_files.txt'))
 
 # Feature files, which are generated after training the whole network.
 # The extracted feature files are utilized to train the classifier.
-path = 'data/extracted_feature'
+path = os.path.join('data', 'extracted_feature')
 TRAIN_FILES_CLS = provider.getDataFiles( \
-    os.path.join(BASE_DIR, path + '/train_files.txt'))
+    os.path.join(BASE_DIR, path, 'train_files.txt'))
 TEST_FILES_CLS = provider.getDataFiles(\
-    os.path.join(BASE_DIR, path + '/test_files.txt'))
+    os.path.join(BASE_DIR, path, 'test_files.txt'))
 
 # Print the log contents to a txt file.
 def log_string(out_str):

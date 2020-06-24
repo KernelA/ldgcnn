@@ -9,6 +9,8 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
 import numpy as np
+
+
 class PlotClass:
     
     def plot_points_with_color(points,label,face_id, fig, axis_off = False):

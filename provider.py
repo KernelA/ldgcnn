@@ -2,6 +2,11 @@ import os
 import sys
 import numpy as np
 import h5py
+import zipfile
+import urllib
+
+import requests
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
@@ -11,10 +16,26 @@ if not os.path.exists(DATA_DIR):
   os.mkdir(DATA_DIR)
 if not os.path.exists(os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048')):
   www = 'https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip'
-  zipfile = os.path.basename(www)
-  os.system('wget %s; unzip %s' % (www, zipfile))
-  os.system('mv %s %s' % (zipfile[:-4], DATA_DIR))
-  os.system('rm %s' % (zipfile))
+ 
+  zipfilename = os.path.basename(www)
+
+  def download_file(url, dest_path):
+    # NOTE the stream=True parameter below
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        chunk_length = 8192
+        content_length = int(r.headers["Content-length"])
+        with open(dest_path, 'wb') as f:
+            download_length = 0
+            for chunk in r.iter_content(chunk_size=chunk_length): 
+                download_length += len(chunk)
+                print(f"Download {www}: {download_length / content_length:.2%}", end="\r")
+                f.write(chunk)
+
+  download_file(www, zipfilename)
+
+  with zipfile.ZipFile(zipfilename) as zip_file:
+    zip_file.extractall(DATA_DIR)
 
 def shuffle_data(data, labels):
   """ Shuffle data and labels.
@@ -139,7 +160,7 @@ def getDataFiles(list_filename):
   return [line.rstrip() for line in open(list_filename)]
 
 def load_h5(h5_filename):
-  f = h5py.File(h5_filename)
+  f = h5py.File(h5_filename, "r")
   data = f['data'][:]
   label = f['label'][:]
   return (data, label)
@@ -149,7 +170,7 @@ def loadDataFile(filename):
 
 
 def load_h5_data_label_seg(h5_filename):
-  f = h5py.File(h5_filename)
+  f = h5py.File(h5_filename, "r")
   data = f['data'][:] # (2048, 2048, 3)
   label = f['label'][:] # (2048, 1)
   seg = f['pid'][:] # (2048, 2048)
